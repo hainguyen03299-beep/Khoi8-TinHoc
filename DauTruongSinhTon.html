@@ -136,14 +136,28 @@
     <div id="game-container" class="container mx-auto px-4 py-4 max-w-2xl flex-grow flex flex-col justify-center relative z-10">
         
         <!-- Login -->
-        <div id="login-screen" class="glass-morphism p-8 text-center">
-            <h1 class="text-3xl font-bold text-cyan-400 mb-2">CODE WARRIOR</h1>
-            <p class="pixel-font text-red-500 mb-6">ĐẤU TRƯỜNG SINH TỒN</p>
-            <div class="text-6xl mb-6">⚔️</div>
-            <div class="relative mb-6">
-                <input type="text" id="studentName" placeholder="Tên chiến binh của bạn..." 
-                       class="w-full p-4 rounded-xl bg-gray-800 border-2 border-cyan-500 text-white text-center focus:outline-none focus:ring-2 focus:ring-cyan-400">
-            </div>
+       <div id="login-screen" class="glass-morphism p-8 text-center">
+    <h1 class="text-3xl font-bold text-cyan-400 mb-2">CODE WARRIOR</h1>
+    <p class="pixel-font text-red-500 mb-6">ĐẤU TRƯỜNG SINH TỒN</p>
+    <div class="text-6xl mb-6">⚔️</div>
+    <div class="relative mb-6">
+        <input type="text" id="studentName" placeholder="Tên chiến binh của bạn..." 
+               class="w-full p-4 rounded-xl bg-gray-800 border-2 border-cyan-500 text-white text-center focus:outline-none focus:ring-2 focus:ring-cyan-400">
+    </div>
+    <button onclick="startGame()" class="btn-action text-white font-bold py-4 px-10 rounded-full text-xl w-full shadow-lg mb-4">
+        VÀO ĐẤU TRƯỜNG
+    </button>
+    
+    <button onclick="toggleLeaderboard()" class="text-yellow-400 pixel-font text-[10px] underline hover:text-yellow-200">
+        [ XEM BẢNG VÀNG ]
+    </button>
+
+    <div id="quick-rank" class="hidden mt-6 text-left bg-black/50 p-4 rounded-xl border border-yellow-500/30">
+        <div id="leaderboard-list-main" class="space-y-1">
+            <p class="text-center text-gray-500">Đang tải...</p>
+        </div>
+    </div>
+</div>
             <button onclick="startGame()" class="btn-action text-white font-bold py-4 px-10 rounded-full text-xl w-full shadow-lg">
                 VÀO ĐẤU TRƯỜNG
             </button>
@@ -592,9 +606,17 @@
       </div>`
     ).join('');
     
+    // Tìm dòng này và sửa lại
     const container = document.getElementById('leaderboard-list');
+    const mainContainer = document.getElementById('leaderboard-list-main'); // Thêm dòng này
+    
     if (container) container.innerHTML = listHtml;
+    if (mainContainer) mainContainer.innerHTML = listHtml; // Thêm dòng này
   });
 </script>
+	function toggleLeaderboard() {
+    const rankDiv = document.getElementById('quick-rank');
+    rankDiv.classList.toggle('hidden'); // Bấm 1 cái hiện, bấm cái nữa ẩn
+}
 </body>
 </html>
