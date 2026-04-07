@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CODE WARRIOR: ĐẤU TRƯỜNG SINH TỒN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quicksand:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: #0f0f1e;
+            color: #fff;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            touch-action: manipulation;
+        }
+
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+        }
+
+        .glass-morphism {
+            background: rgba(20, 20, 35, 0.9);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 2px solid #4facfe;
+            box-shadow: 0 0 25px rgba(79, 172, 254, 0.4);
+        }
+
+        .bar-container {
+            background: #222;
+            height: 16px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #444;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .hp-fill { 
+            height: 100%;
+            background: linear-gradient(90deg, #ff4757, #ff6b81, #ff4757);
+            background-size: 200% 100%;
+            animation: flow 2s linear infinite;
+            transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            box-shadow: 0 0 10px rgba(255, 71, 87, 0.8);
+        }
+
+        .boss-fill { 
+            height: 100%;
+            background: linear-gradient(90deg, #8e44ad, #a020f0, #e066ff, #8e44ad);
+            background-size: 200% 100%;
+            animation: flow 3s linear infinite;
+            transition: width 0.6s ease-out; 
+            box-shadow: 0 0 15px rgba(160, 32, 240, 0.7);
+        }
+
+        .energy-fill { 
+            height: 100%;
+            background: linear-gradient(90deg, #f1c40f, #ffa502); 
+            transition: width 0.3s ease; 
+        }
+
+        @keyframes flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .btn-action {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .answer-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+        }
+
+        .answer-btn.correct {
+            border-color: #10b981 !important;
+            background: rgba(16, 185, 129, 0.2) !important;
+            transform: scale(1.02);
+        }
+
+        .answer-btn.wrong {
+            border-color: #ef4444 !important;
+            background: rgba(239, 68, 68, 0.2) !important;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        .shake { animation: shake 0.2s ease-in-out 2; }
+
+        .pop-up-text {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            pointer-events: none;
+            animation: floatUp 1.2s forwards;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translate(-50%, 0); }
+            20% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -100px); }
+        }
+
+        .boss-glow {
+            box-shadow: 0 0 40px rgba(160, 32, 240, 0.5);
+            border-color: #a020f0 !important;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3" type="audio/mpeg"></audio>
+    <audio id="correctSound"><source src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"></audio>
+    <audio id="wrongSound"><source src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
+    <audio id="hitSound"><source src="https://assets.mixkit.co/active_storage/sfx/1113/1113-preview.mp3"></audio>
+    <audio id="lootSound"><source src="https://assets.mixkit.co/active_storage/sfx/1997/1997-preview.mp3"></audio>
+
+    <div id="game-container" class="container mx-auto px-4 py-4 max-w-2xl flex-grow flex flex-col justify-center relative z-10">
+        
+        <!-- Login -->
+        <div id="login-screen" class="glass-morphism p-8 text-center">
+            <h1 class="text-3xl font-bold text-cyan-400 mb-2">CODE WARRIOR</h1>
+            <p class="pixel-font text-red-500 mb-6">ĐẤU TRƯỜNG SINH TỒN</p>
+            <div class="text-6xl mb-6">⚔️</div>
+            <div class="relative mb-6">
+                <input type="text" id="studentName" placeholder="Tên chiến binh của bạn..." 
+                       class="w-full p-4 rounded-xl bg-gray-800 border-2 border-cyan-500 text-white text-center focus:outline-none focus:ring-2 focus:ring-cyan-400">
+            </div>
+            <button onclick="startGame()" class="btn-action text-white font-bold py-4 px-10 rounded-full text-xl w-full shadow-lg">
+                VÀO ĐẤU TRƯỜNG
+            </button>
+        </div>
+
+        <!-- Stage Intro -->
+        <div id="stage-intro" class="hidden glass-morphism p-8 text-center">
+            <h2 id="stage-title" class="text-2xl font-bold text-yellow-400 mb-4 uppercase">CHẶNG 1</h2>
+            <div id="stage-icon" class="text-7xl mb-6">🛡️</div>
+            <p id="stage-desc" class="text-lg text-gray-300 mb-8"></p>
+            <button onclick="startQuestions()" class="btn-action text-white font-bold py-4 px-10 rounded-full text-xl shadow-lg w-full">
+                SẴN SÀNG!
+            </button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden glass-morphism p-5 md:p-8 relative overflow-hidden">
+            <!-- HUD -->
+            <div class="space-y-4 mb-6">
+                <div id="boss-hud" class="hidden">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="pixel-font text-purple-400">BOSS: RỒNG LOGIC</span>
+                        <span id="boss-hp-text" class="font-bold text-purple-400">100%</span>
+                    </div>
+                    <div class="bar-container">
+                        <div id="boss-fill" class="boss-fill" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-3">
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between items-center px-1">
+                                <span class="pixel-font text-red-500 text-[8px]">SINH MỆNH</span>
+                                <span id="hp-text" class="text-[10px] font-bold text-red-400">3/3</span>
+                            </div>
+                            <div class="bar-container">
+                                <div id="hp-fill" class="hp-fill" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between items-center px-1">
+                                <span class="pixel-font text-yellow-400 text-[8px]">NĂNG LƯỢNG</span>
+                                <span id="energy-text" class="text-[10px] font-bold text-yellow-400">0</span>
+                            </div>
+                            <div class="bar-container">
+                                <div id="energy-fill" class="energy-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right flex flex-col justify-center">
+                        <div id="timer" class="pixel-font text-cyan-400 text-lg">00:00</div>
+                        <div id="combo-display" class="text-orange-500 font-bold italic text-sm hidden animate-bounce">COMBO X1!</div>
+                        <div class="text-[9px] text-gray-400 mt-2 uppercase">CHẶNG <span id="current-stage-num" class="text-cyan-400">1</span> | CÂU <span id="current-q-num" class="text-cyan-400">1</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="question-container">
+                <div id="question-text" class="text-lg font-bold text-white mb-6 text-center min-h-[60px]">
+                    Đang tải câu hỏi...
+                </div>
+                <div id="options-container" class="grid grid-cols-1 gap-3"></div>
+            </div>
+
+            <div id="floating-msg-container"></div>
+        </div>
+
+        <!-- End Screen -->
+        <div id="end-screen" class="hidden glass-morphism p-8 text-center">
+            <h2 class="text-3xl font-bold text-cyan-400 mb-2">CHIẾN THẮNG!</h2>
+            <div class="text-6xl my-6">🏆</div>
+            <div class="bg-gray-800/60 p-6 rounded-2xl mb-8 text-left space-y-3">
+                <p>👤 Chiến binh: <span id="res-name" class="font-bold text-cyan-400"></span></p>
+                <p>⚡ Năng lượng: <span id="res-energy" class="font-bold text-yellow-400"></span></p>
+                <p>❤️ Sinh mạng: <span id="res-hp" class="font-bold text-red-500"></span></p>
+                <p>⏱ Thời gian: <span id="res-time" class="font-bold text-purple-400"></span></p>
+            </div>
+            <button onclick="location.reload()" class="btn-action text-white font-bold py-4 px-12 rounded-full text-xl shadow-lg w-full">
+                CHƠI LẠI
+            </button>
+			<div class="mt-8 bg-black/40 rounded-2xl p-5 border border-cyan-500/30">
+    <h3 class="pixel-font text-yellow-400 text-center mb-4 text-xs">--- BẢNG VÀNG CHIẾN BINH ---</h3>
+    <div id="leaderboard-list" class="space-y-1">
+        <p class="text-center text-gray-500 animate-pulse">Đang kết nối đấu trường...</p>
+    </div>
+</div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95">
+        <div class="glass-morphism max-w-sm w-full p-8 text-center border-red-500 bg-gray-900 shadow-[0_0_50px_rgba(239,68,68,0.3)]">
+            <div class="text-6xl mb-4 animate-pulse">💀</div>
+            <h3 class="text-2xl font-bold text-red-500 mb-2 uppercase">BẠN ĐÃ TỬ TRẬN!</h3>
+            <p class="text-yellow-400 font-bold mb-4 italic">Đấu trường này quá khắc nghiệt với bạn chăng?</p>
+            <p id="death-slogan" class="text-gray-400 italic mb-8 min-h-[3rem] flex items-center justify-center px-2">"Lỗi tại compiler chứ không phải tại mình."</p>
+            <button onclick="restartFromZero()" class="btn-action bg-red-600 text-white font-bold py-4 px-8 rounded-full w-full uppercase tracking-widest">
+                <i class="fas fa-redo mr-2"></i> HỒI SINH
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const rawQuestions = [
+            // Mức độ Nhận biết (N) - Chặng 1
+            { q: "Biến là gì?", a: ["Giá trị cố định", "Vùng nhớ lưu dữ liệu", "Phép toán", "Lệnh in"], c: 1, lv: "N" },
+            { q: "Giá trị của biến có thể:", a: ["Không đổi", "Thay đổi", "Luôn bằng 0", "Luôn là số"], c: 1, lv: "N" },
+            { q: "Hằng là gì?", a: ["Biến thay đổi", "Giá trị không đổi", "Lệnh", "Điều kiện"], c: 1, lv: "N" },
+            { q: "Trong Scratch, khối lệnh 'set x to 10' dùng để làm gì?", a: ["Thay đổi x", "Gán giá trị 10 cho x", "In giá trị x", "Xóa biến x"], c: 1, lv: "N" },
+            { q: "Ký hiệu nào thường dùng để gán giá trị trong lập trình?", a: ["+", "-", "=", "*"], c: 2, lv: "N" },
+            { q: "Đâu là tên biến hợp lệ?", a: ["1_bien", "bien 1", "bien_1", "bien@1"], c: 2, lv: "N" },
+
+            // Mức độ Thông hiểu (T) - Chặng 2
+            { q: "Vì sao cần dùng biến trong chương trình?", a: ["Để vẽ hình", "Để lưu và xử lý dữ liệu linh hoạt", "Để nghe nhạc", "Để tắt máy"], c: 1, lv: "T" },
+            { q: "Sự khác biệt chính giữa biến và hằng là:", a: ["Biến có tên, hằng thì không", "Biến thay đổi được, hằng thì không", "Hằng là số, biến là chữ", "Không có khác biệt"], c: 1, lv: "T" },
+            { q: "Khi gán a = 10, rồi sau đó gán a = 20, giá trị cuối cùng của a là?", a: ["10", "20", "30", "Lỗi"], c: 1, lv: "T" },
+            { q: "Khối lệnh 'change score by 1' có ý nghĩa gì?", a: ["Đặt điểm là 1", "Tăng điểm thêm 1", "Giảm điểm đi 1", "Xóa điểm"], c: 1, lv: "T" },
+            { q: "Biến toàn cục (Global variable) có thể sử dụng ở đâu?", a: ["Chỉ trong 1 nhân vật", "Toàn bộ chương trình", "Chỉ trong 1 hàm", "Không ở đâu cả"], c: 1, lv: "T" },
+
+            // Mức độ Vận dụng (V) - Chặng 3 (Boss)
+            { q: "Biến a = 5, sau đó gán a = a + 3. Giá trị mới của a là:", a: ["5", "3", "8", "15"], c: 2, lv: "V" },
+            { q: "Biến x = 3, sau x = x * x. Kết quả:", a: ["6", "9", "3", "1"], c: 1, lv: "V" },
+            { q: "Nếu x < 10 thì x = x + 5. Với x = 5 ban đầu, giá trị cuối của x là:", a: ["5", "10", "15", "0"], c: 1, lv: "V" },
+            { q: "Cho n = 10. Nếu n chia hết cho 2 thì n = n / 2. Giá trị n là:", a: ["10", "5", "2", "0"], c: 1, lv: "V" },
+            { q: "a = 2, b = 3. Gán c = a; a = b; b = c. Giá trị của a và b là:", a: ["a=2, b=3", "a=3, b=2", "a=3, b=3", "a=2, b=2"], c: 1, lv: "V" },
+            { q: "Cho vòng lặp chạy 5 lần, mỗi lần biến i tăng thêm 2. Nếu ban đầu i=0, kết thúc i bằng:", a: ["5", "10", "7", "2"], c: 1, lv: "V" },
+            { q: "x = 10; y = 20. Nếu x > y thì x = x - y, ngược lại y = y - x. Giá trị y mới là:", a: ["10", "20", "0", "30"], c: 0, lv: "V" },
+            { q: "Biến 'ten' = 'Code', 'phu' = 'Warrior'. Gán 'full' = 'ten' + 'phu'. Giá trị 'full' là:", a: ["Code", "Warrior", "CodeWarrior", "Lỗi"], c: 2, lv: "V" },
+            { q: "Cho danh sách A = [1, 2, 3]. Sau khi thêm 4 vào cuối, độ dài danh sách là:", a: ["3", "4", "5", "7"], c: 1, lv: "V" },
+            { q: "Nếu điểm > 8 thì xếp loại 'Giỏi'. Nếu điểm = 8.5, xếp loại là:", a: ["Khá", "Giỏi", "Trung bình", "Yếu"], c: 1, lv: "V" },
+            { q: "Cho i = 1. Lặp khi i < 5: i = i * 2. Giá trị i sau cùng là:", a: ["4", "5", "8", "16"], c: 2, lv: "V" },
+            { q: "a = 7; b = 4. Gán a = a % b. Giá trị mới của a là:", a: ["3", "1", "11", "28"], c: 0, lv: "V" }
+        ];
+
+        const deathSlogans = [
+            "Dừng lại đi, code thế này bug nó cười cho đấy!",
+            "Game dễ, tại bạn chưa debug kỹ thôi.",
+            "Syntax Error trong chính cuộc đời bạn.",
+            "Đừng buồn, AI của tôi cũng từng ngốc như bạn.",
+            "Ctrl + Z lại cuộc đời ngay nào chiến binh!",
+            "Chết không phải là kết thúc, gõ lại từ đầu mới là kết thúc.",
+            "Bạn có 99 bug, và giờ là 100 rồi đấy.",
+            "Lỗi không phải tại code, lỗi tại người gõ phím.",
+            "Skill issue! Hãy quay lại khi đã nạp đủ Logic."
+        ];
+
+        const STAGE_CONFIG = {
+            1: { count: 5, lv: "N", title: "CHẶNG 1: TRANG BỊ TẬN RĂNG", icon: "🛡️", desc: "Đúng mỗi câu nhận 10 Energy vũ khí. Sai không mất HP." },
+            2: { count: 5, lv: "T", title: "CHẶNG 2: VƯỢT ẢI QUÁI VẬT", icon: "👹", desc: "Cẩn thận! Sai mỗi câu sẽ bị trừ 1 HP sinh mạng." },
+            3: { count: 10, lv: "V", title: "CHẶNG 3: ĐỐI ĐẦU BOSS CUỐI", icon: "🐲", desc: "Gây sát thương tối đa lên Boss bằng kỹ năng lập trình!" }
+        };
+
+        let currentStage = 1;
+        let questionIndex = 0;
+        let hp = 3;
+        let maxHp = 3;
+        let energy = 0;
+        let combo = 0;
+        let bossHp = 100;
+        let startTime, timerInterval;
+        let playerName = "";
+        let currentQuestions = [];
+        let canClick = true;
+
+        function startGame() {
+            playerName = document.getElementById('studentName').value.trim();
+            if (!playerName) return;
+            
+            document.getElementById('login-screen').classList.add('hidden');
+            const bg = document.getElementById('bgMusic');
+            bg.volume = 0.3;
+            bg.play().catch(() => {});
+            
+            showStageIntro();
+            startTime = Date.now();
+            startTimer();
+        }
+
+        function showStageIntro() {
+            const intro = document.getElementById('stage-intro');
+            const config = STAGE_CONFIG[currentStage];
+            
+            document.getElementById('stage-title').innerText = config.title;
+            document.getElementById('stage-icon').innerText = config.icon;
+            document.getElementById('stage-desc').innerText = config.desc;
+            
+            intro.classList.remove('hidden');
+            document.getElementById('quiz-screen').classList.add('hidden');
+        }
+
+        function startQuestions() {
+            document.getElementById('stage-intro').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            
+            const config = STAGE_CONFIG[currentStage];
+            let pool = rawQuestions.filter(q => q.lv === config.lv);
+            currentQuestions = pool.sort(() => Math.random() - 0.5).slice(0, config.count);
+            
+            questionIndex = 0;
+            if (currentStage === 3) {
+                bossHp = 100;
+                document.getElementById('boss-hud').classList.remove('hidden');
+                document.getElementById('quiz-screen').classList.add('boss-glow');
+            } else {
+                document.getElementById('boss-hud').classList.add('hidden');
+                document.getElementById('quiz-screen').classList.remove('boss-glow');
+            }
+            updateQuestionUI();
+        }
+
+        function updateQuestionUI() {
+            canClick = true;
+            const qData = currentQuestions[questionIndex];
+            document.getElementById('question-text').innerText = qData.q;
+            document.getElementById('current-stage-num').innerText = currentStage;
+            document.getElementById('current-q-num').innerText = questionIndex + 1;
+            
+            const optionsBox = document.getElementById('options-container');
+            optionsBox.innerHTML = '';
+
+            qData.a.forEach((text, idx) => {
+                const isCorrect = idx === qData.c;
+                const btn = document.createElement('button');
+                btn.className = "answer-btn w-full p-4 text-left rounded-xl font-bold flex items-center justify-between";
+                btn.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="bg-gray-800 w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg border border-cyan-500 text-cyan-400">${String.fromCharCode(65 + idx)}</span> 
+                        <span class="option-text">${text}</span>
+                    </div>
+                    <span class="feedback-icon text-xl opacity-0 transform scale-0 transition-all duration-300"></span>`;
+                
+                btn.onclick = () => { if (canClick) handleAnswer(isCorrect, btn, idx); };
+                optionsBox.appendChild(btn);
+            });
+
+            refreshHUD();
+        }
+
+        function refreshHUD() {
+            document.getElementById('hp-fill').style.width = `${(hp / maxHp) * 100}%`;
+            document.getElementById('hp-text').innerText = `${hp}/${maxHp}`;
+            document.getElementById('energy-fill').style.width = `${Math.min(energy, 100)}%`;
+            document.getElementById('energy-text').innerText = energy;
+
+            if (currentStage === 3) {
+                document.getElementById('boss-fill').style.width = `${bossHp}%`;
+                document.getElementById('boss-hp-text').innerText = `${bossHp}%`;
+            }
+
+            const comboEl = document.getElementById('combo-display');
+            if (combo > 1) {
+                comboEl.innerText = `COMBO X${combo}!`;
+                comboEl.classList.remove('hidden');
+            } else {
+                comboEl.classList.add('hidden');
+            }
+        }
+
+        function handleAnswer(isCorrect, btnElement, selectedIdx) {
+            canClick = false;
+            const feedback = btnElement.querySelector('.feedback-icon');
+            const qData = currentQuestions[questionIndex];
+
+            if (isCorrect) {
+                combo++;
+                btnElement.classList.add('correct');
+                feedback.innerHTML = '<i class="fas fa-check-circle text-green-400"></i>';
+                feedback.classList.remove('opacity-0', 'scale-0');
+                feedback.classList.add('scale-100');
+                
+                energy += (combo >= 3 ? 20 : 10);
+
+                if (currentStage === 1) {
+                    showFloatingMsg("+10 ENG", "text-cyan-400");
+                    playSound('loot');
+                } else if (currentStage === 3) {
+                    bossHp -= 10;
+                    if (bossHp < 0) bossHp = 0;
+                    showFloatingMsg("💥 BOSS -10%", "text-purple-400 font-bold");
+                    playSound('correct');
+                } else {
+                    playSound('correct');
+                }
+            } else {
+                combo = 0;
+                btnElement.classList.add('wrong');
+                feedback.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
+                feedback.classList.remove('opacity-0', 'scale-0');
+                feedback.classList.add('scale-100');
+
+                const allBtns = document.querySelectorAll('.answer-btn');
+                allBtns[qData.c].classList.add('correct');
+                allBtns[qData.c].querySelector('.feedback-icon').innerHTML = '<i class="fas fa-check-circle text-green-400"></i>';
+                allBtns[qData.c].querySelector('.feedback-icon').classList.remove('opacity-0', 'scale-0');
+                allBtns[qData.c].querySelector('.feedback-icon').classList.add('scale-100');
+                
+                if (currentStage >= 2) {
+                    hp--;
+                    document.getElementById('quiz-screen').classList.add('shake');
+                    if (navigator.vibrate) navigator.vibrate(200);
+                    playSound('hit');
+                    setTimeout(() => document.getElementById('quiz-screen').classList.remove('shake'), 300);
+                    
+                    if (hp <= 0) {
+                        setTimeout(() => showGameOver(), 1000);
+                        return;
+                    }
+                } else {
+                    playSound('wrong');
+                }
+            }
+
+            refreshHUD();
+            setTimeout(() => {
+                questionIndex++;
+                if (questionIndex < currentQuestions.length) {
+                    updateQuestionUI();
+                } else {
+                    nextStage();
+                }
+            }, 1500);
+        }
+
+        function showGameOver() {
+            const slogan = deathSlogans[Math.floor(Math.random() * deathSlogans.length)];
+            document.getElementById('death-slogan').innerText = `"${slogan}"`;
+            document.getElementById('game-over-modal').classList.remove('hidden');
+        }
+
+        function showFloatingMsg(text, colorClass) {
+            const container = document.getElementById('floating-msg-container');
+            const el = document.createElement('div');
+            el.className = `pop-up-text pixel-font ${colorClass}`;
+            el.innerText = text;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 1200);
+        }
+
+        function nextStage() {
+            if (currentStage < 3) {
+                currentStage++;
+                showStageIntro();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+    clearInterval(timerInterval);
+    document.getElementById('quiz-screen').classList.add('hidden');
+    document.getElementById('end-screen').classList.remove('hidden');
+    
+    document.getElementById('res-name').innerText = playerName;
+    document.getElementById('res-energy').innerText = energy;
+    document.getElementById('res-hp').innerText = hp + "/" + maxHp;
+    
+    const totalTime = Math.floor((Date.now() - startTime) / 1000);
+    const finalTime = formatTime(totalTime);
+    document.getElementById('res-time').innerText = finalTime;
+
+    // LỆNH QUAN TRỌNG: Gửi dữ liệu lên Firebase
+    if (window.saveScore) {
+        window.saveScore(playerName, energy, finalTime, hp + "/" + maxHp);
+    }
+}
+
+
+        function restartFromZero() {
+            currentStage = 1; hp = maxHp; energy = 0; combo = 0; bossHp = 100;
+            startTime = Date.now();
+            document.getElementById('game-over-modal').classList.add('hidden');
+            showStageIntro();
+            startTimer();
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('timer').innerText = formatTime(elapsed);
+            }, 1000);
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
+        }
+
+        function playSound(type) {
+            const s = document.getElementById(type + 'Sound');
+            if (s) { s.currentTime = 0; s.play().catch(() => {}); }
+        }
+    </script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, set, push, onValue, query, orderByChild, limitToLast } 
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+  // Cấu hình Firebase của riêng bạn
+  const firebaseConfig = {
+    apiKey: "AIzaSyD271ASAycutvOF4dW2AjBCWeKcQsuTnp8",
+    authDomain: "test2-khoi8.firebaseapp.com",
+    databaseURL: "https://test2-khoi8-default-rtdb.firebaseio.com/", // Link database của bạn
+    projectId: "test2-khoi8",
+    storageBucket: "test2-khoi8.firebasestorage.app",
+    messagingSenderId: "795952156966",
+    appId: "1:795952156966:web:429927accbe3c9d882f1e7",
+    measurementId: "G-3TT53MVBKE"
+  };
+
+  // Khởi tạo kết nối
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // HÀM LƯU ĐIỂM: Sẽ được gọi khi học sinh thắng game
+  window.saveScore = function(name, energy, time, hpStatus) {
+    const scoresRef = ref(db, 'leaderboard');
+    const newScoreRef = push(scoresRef);
+    set(newScoreRef, {
+      name: name,
+      energy: parseInt(energy),
+      time: time,
+      hp: hpStatus,
+      timestamp: Date.now()
+    });
+  };
+
+  // HÀM HIỂN THỊ: Tự động cập nhật bảng xếp hạng khi có người mới lưu điểm
+  const leaderboardQuery = query(ref(db, 'leaderboard'), orderByChild('energy'), limitToLast(10));
+  onValue(leaderboardQuery, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+    
+    let scores = [];
+    for (let id in data) scores.push(data[id]);
+    
+    // Sắp xếp điểm cao nhất lên đầu
+    scores.sort((a, b) => b.energy - a.energy);
+
+    const listHtml = scores.map((s, index) => 
+      `<div class="flex justify-between border-b border-white/10 py-2">
+        <span class="${index < 3 ? 'text-yellow-400 font-bold' : ''}">${index + 1}. ${s.name}</span>
+        <span class="text-cyan-400">${s.energy}⚡ <small class="text-gray-500">(${s.time})</small></span>
+      </div>`
+    ).join('');
+    
+    const container = document.getElementById('leaderboard-list');
+    if (container) container.innerHTML = listHtml;
+  });
+</script>
+</body>
+</html>
